@@ -265,21 +265,7 @@ osint-asset-monitor/
 - [ ] マルチテナント対応
 - [ ] STIX/TAXII サポート
 
-## 🤝 コントリビューション
 
-プルリクエストを歓迎します！
-
-1. Fork
-2. Feature ブランチ作成 (`git checkout -b feature/ThreatIntel`)
-3. Commit (`git commit -m 'Add threat intelligence'`)
-4. Push (`git push origin feature/ThreatIntel`)
-5. Pull Request作成
-
-## 📄 ライセンス
-
-MIT License - [LICENSE](LICENSE)
-
-## 🙏 謝辞
 
 ### 脅威インテリジェンスソース
 - [AlienVault OTX](https://otx.alienvault.com/)
@@ -294,16 +280,6 @@ MIT License - [LICENSE](LICENSE)
 - [PostgreSQL](https://www.postgresql.org/)
 - [Redis](https://redis.io/)
 
-## 📞 サポート
-
-- **Issues**: https://github.com/d01ki/osint-asset-monitor/issues
-- **Documentation**: [docs/THREAT_INTELLIGENCE.md](docs/THREAT_INTELLIGENCE.md)
-
----
-
-**⚠️ 免責事項**: このツールは自組織の資産監視と脅威分析を目的としています。許可なく他組織のネットワークをスキャンすることは違法です。
-
-## 🎓 学習リソース
 
 - [OSINT Framework](https://osintframework.com/)
 - [MITRE ATT&CK Navigator](https://mitre-attack.github.io/attack-navigator/)
