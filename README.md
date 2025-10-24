@@ -3,18 +3,35 @@
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Python](https://img.shields.io/badge/python-3.9+-blue.svg)
 ![Docker](https://img.shields.io/badge/docker-ready-brightgreen.svg)
+![Threat Intel](https://img.shields.io/badge/threat_intel-enabled-red.svg)
+![MITRE ATT&CK](https://img.shields.io/badge/MITRE_ATT%26CK-integrated-orange.svg)
 
-**組織の外部公開資産を継続的に監視し、セキュリティリスクを早期検出するOSINTツール**
+**組織の外部公開資産を継続的に監視し、高度な脅威インテリジェンスで早期にリスクを検出するOSINTツール**
 
 ## 🎯 特徴
 
+### 資産発見・監視
 - **自動資産発見**: ドメイン、サブドメイン、IPアドレス、証明書を自動検出
 - **継続的監視**: 定期的なスキャンで新規資産や変更を検知
 - **統合データソース**: Shodan、Censys、Certificate Transparency、DNS記録を統合
-- **脅威インテリジェンス**: 脆弱性情報との自動マッチング
-- **アラート機能**: 新規資産検出時のSlack/Email通知
-- **可視化ダッシュボード**: 資産の全体像を直感的に把握
-- **レポート生成**: コンプライアンス対応やセキュリティ監査用のレポート
+
+### 🔥 高度な脅威インテリジェンス
+- **複数TIフィード統合**: AlienVault OTX、URLhaus、Feodo Tracker、ThreatFox、VirusTotal
+- **MITRE ATT&CK マッピング**: 検出された脅威を攻撃者のTTPに関連付け
+- **IoC管理**: 侵害指標（IoC）の自動収集・エンリッチメント・相関分析
+- **APTグループ追跡**: 脅威アクターのプロファイルと使用技術の把握
+- **脅威スコアリング**: 0-100の統合脅威スコアで優先度を判定
+- **自動エンリッチメント**: 検出された資産を自動的に脅威情報で拡充
+
+### アラート・通知
+- **リアルタイムアラート**: 新規資産・脅威検出時の即座通知
+- **多チャネル通知**: Slack、Email対応
+- **リスクベースアラート**: CRITICAL/HIGH/MEDIUM/LOW/INFO
+
+### 分析・レポート
+- **可視化ダッシュボード**: 資産とリスクの全体像を直感的に把握
+- **レポート生成**: コンプライアンス対応やセキュリティ監査用
+- **トレンド分析**: IoC発生傾向と相関関係の可視化
 
 ## 🏗️ アーキテクチャ
 
@@ -32,21 +49,25 @@
 ┌──────────────────────▼──────────────────────────────────────┐
 │              Task Queue (Celery + Redis)                     │
 │  - Asset Discovery Workers                                   │
+│  - Threat Intelligence Workers                               │
 │  - Vulnerability Scanner Workers                             │
 │  - Notification Workers                                      │
 └──────────────────────┬──────────────────────────────────────┘
                        │
 ┌──────────────────────▼──────────────────────────────────────┐
 │                  Database (PostgreSQL)                       │
-│  - Assets, Scans, Vulnerabilities, Alerts                   │
+│  - Assets, IoCs, Threat Intel, MITRE ATT&CK                 │
 └──────────────────────────────────────────────────────────────┘
 
-External APIs:
-├── Shodan API
-├── Censys API
-├── Certificate Transparency Logs
-├── VirusTotal API
-└── CVE Database (NVD)
+External Threat Intelligence APIs:
+├── AlienVault OTX (脅威パルス)
+├── URLhaus (悪意のあるURL)
+├── Feodo Tracker (C2サーバー)
+├── ThreatFox (IoC)
+├── VirusTotal (マルウェアスキャン)
+├── Shodan (公開資産)
+├── Censys (証明書・サービス)
+└── MITRE ATT&CK (戦術・技術)
 ```
 
 ## 🚀 クイックスタート
@@ -54,10 +75,10 @@ External APIs:
 ### 前提条件
 
 - Docker & Docker Compose
-- API Keys (オプションだが推奨):
+- API Keys (無料で取得可能):
   - [Shodan API Key](https://account.shodan.io/)
-  - [Censys API Key](https://censys.io/account/api)
   - [VirusTotal API Key](https://www.virustotal.com/gui/my-apikey)
+  - [AlienVault OTX](https://otx.alienvault.com/api) (オプション)
 
 ### インストール
 
@@ -74,195 +95,217 @@ cp .env.example .env
 docker-compose up -d
 
 # ログを確認
-docker-compose logs -f
+docker-compose logs -f api
 ```
 
 ### アクセス
 
 - **API Documentation**: http://localhost:8000/docs
 - **Celery Flower (タスク監視)**: http://localhost:5555
-- **デフォルト認証情報**: 
-  - Username: `admin`
-  - Password: `changeme`
 
 ## 📖 使い方
 
-### APIを使用してスキャンを実行
+### 基本的なワークフロー
 
-```bash
-# 健全性チェック
-curl http://localhost:8000/health
+1. **組織を登録**
+2. **初回スキャンを実行**
+3. **脅威インテリジェンスで資産をエンリッチ**
+4. **アラートを確認・対応**
+5. **定期スキャンを設定**
 
-# 組織を追加（APIドキュメントから実行）
-# POST /api/v1/organizations
-{
-  "name": "Example Corp",
-  "domain": "example.com",
-  "description": "サンプル組織"
-}
-
-# スキャンを開始
-# POST /api/v1/scans
-{
-  "organization_id": 1,
-  "scan_type": "full"
-}
-```
+詳細は [脅威インテリジェンスドキュメント](docs/THREAT_INTELLIGENCE.md) を参照してください。
 
 ## 📦 主要機能
 
-### 1. ドメイン・サブドメイン発見
-- **Certificate Transparency Logs**: crt.shからサブドメインを自動収集
-- **DNS Brute Force**: 一般的なサブドメイン名で列挙
-- **DNS記録**: A、AAAA、CNAME、MX、TXTレコードの取得
+### 1. 資産発見
 
-### 2. IPアドレス・ポートスキャン
-- **Shodan統合**: 公開サービス、バナー、脆弱性情報を取得
-- **Censys統合**: 証明書情報とサービス詳細を収集
-- **ポート情報**: 開放ポート、サービス名、バージョンを検出
+#### サブドメイン発見
+- Certificate Transparency Logs (crt.sh)
+- DNS Brute Force
+- 検索エンジンからの収集
 
-### 3. 証明書監視
-- **有効期限監視**: SSL/TLS証明書の有効期限を追跡
-- **自己署名証明書検出**: セキュリティリスクのある証明書を特定
-- **証明書チェーン検証**: 信頼チェーンの完全性を確認
+#### 公開サービス発見
+- Shodan統合: 開放ポート、バナー、脆弱性
+- Censys統合: 証明書、サービス詳細
 
-### 4. 脆弱性マッチング
-- **CVEデータベース**: 検出されたサービスバージョンとCVEをマッチング
-- **CVSSスコア**: 深刻度による優先度付け
-- **エクスプロイト情報**: 既知のエクスプロイトを関連付け
+### 2. 🛡️ 脅威インテリジェンス
 
-### 5. アラート&通知
-- **Slack通知**: 新規資産や脆弱性検出時に即座に通知
-- **Email通知**: カスタマイズ可能なメールアラート
-- **ダッシュボード**: リアルタイムアラート表示
+#### 複数ソース統合
+```python
+# ドメインの脅威情報を取得
+threat_info = await get_threat_intelligence("example.com", target_type="domain")
+
+# 結果
+# - threat_score: 0-100
+# - risk_level: CRITICAL/HIGH/MEDIUM/LOW/INFO
+# - sources: AlienVault, URLhaus, Feodo, ThreatFox, VirusTotal
+```
+
+#### 脅威スコアリング
+- **AlienVault OTX**: Pulseカウント → 最大30点
+- **URLhaus**: 悪意のあるURL数 → 最大30点
+- **Feodo Tracker**: C2サーバー検出 → 40点
+- **ThreatFox**: IoC検出 → 25点
+- **VirusTotal**: マルウェア検出数 → 最大40点
+
+### 3. 🎯 MITRE ATT&CK統合
+
+#### APTグループ分析
+```python
+# APT28の詳細を取得
+apt_info = await get_apt_group_info("APT28")
+
+# - 使用技術: T1566.001, T1071.001, T1003
+# - 使用ソフトウェア: X-Agent, Sofacy
+# - 標的業界: 政府、防衛、メディア
+```
+
+#### 攻撃技術マッピング
+- 検出された脅威を自動的にATT&CK技術に関連付け
+- 防御カバレッジ分析
+- 戦術ベースの推奨事項生成
+
+### 4. 📊 IoC管理
+
+#### 対応IoC タイプ
+- IPアドレス
+- ドメイン
+- URL
+- ファイルハッシュ (MD5, SHA1, SHA256)
+- メールアドレス
+- CVE ID
+- レジストリキー
+
+#### 自動機能
+- IoC の自動検出・検証
+- 脅威インテリジェンスでエンリッチ
+- マルウェア・脅威アクター・キャンペーンで相関分析
+- タグの共通性でクラスタリング
+- 定期レポート生成
+
+### 5. アラート＆通知
+
+#### アラートタイプ
+- `new_asset`: 新規資産検出
+- `threat_detected`: 脅威検出 (高スコア)
+- `new_ioc`: IoC検出
+- `new_vulnerability`: 脆弱性検出
+- `certificate_expiry`: 証明書期限警告
+
+#### 通知チャネル
+- Slack Webhook
+- Email (SMTP)
+- カスタムWebhook
 
 ## 🔧 設定
 
-### スキャンスケジュール
-
-`.env`ファイルでスキャン頻度を設定:
+### 環境変数 (.env)
 
 ```env
-# 24時間ごとにスキャン (秒単位)
-SCAN_INTERVAL=86400
+# Threat Intelligence APIs
+SHODAN_API_KEY=your_key_here
+VIRUSTOTAL_API_KEY=your_key_here
 
-# 同時実行スキャン数
-MAX_CONCURRENT_SCANS=5
-```
-
-### 通知設定
-
-```env
-# Slack通知
-SLACK_WEBHOOK_URL=https://hooks.slack.com/services/YOUR/WEBHOOK/URL
-
-# Email通知
+# 通知設定
+SLACK_WEBHOOK_URL=https://hooks.slack.com/services/...
 SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
 SMTP_USER=your-email@example.com
-SMTP_PASSWORD=your-app-password
 ALERT_EMAIL_TO=security-team@example.com
-```
 
-### API Keys
-
-```env
-# Shodan (推奨)
-SHODAN_API_KEY=your_shodan_api_key
-
-# Censys (オプション)
-CENSYS_API_ID=your_censys_id
-CENSYS_API_SECRET=your_censys_secret
-
-# VirusTotal (オプション)
-VIRUSTOTAL_API_KEY=your_virustotal_key
+# スキャン設定
+SCAN_INTERVAL=86400  # 24時間
+MAX_CONCURRENT_SCANS=5
 ```
 
 ## 🗂️ プロジェクト構造
 
 ```
 osint-asset-monitor/
-├── backend/                    # FastAPI バックエンド
+├── backend/
 │   ├── app/
-│   │   ├── api/               # APIエンドポイント
-│   │   ├── core/              # 設定・セキュリティ
-│   │   ├── models/            # データベースモデル
-│   │   ├── services/          # ビジネスロジック
-│   │   │   ├── subdomain_scanner.py  # サブドメインスキャナー
-│   │   │   ├── shodan_scanner.py     # Shodan統合
-│   │   │   └── ...
-│   │   └── tasks/             # Celeryタスク
-│   ├── tests/                 # テストコード
-│   └── requirements.txt
-├── scripts/                    # ユーティリティスクリプト
-├── docs/                       # ドキュメント
+│   │   ├── services/
+│   │   │   ├── subdomain_scanner.py      # サブドメインスキャン
+│   │   │   ├── shodan_scanner.py         # Shodan統合
+│   │   │   ├── threat_intelligence.py    # 🔥 TI統合
+│   │   │   ├── mitre_attack.py          # 🔥 MITRE ATT&CK
+│   │   │   └── ioc_manager.py           # 🔥 IoC管理
+│   │   ├── models/database.py           # データベースモデル
+│   │   └── ...
+├── docs/
+│   └── THREAT_INTELLIGENCE.md           # 🔥 TIドキュメント
 ├── docker-compose.yml
-├── .env.example
 └── README.md
 ```
 
-## 🔐 セキュリティ
-
-- **認証**: JWT トークンベース（実装予定）
-- **API Rate Limiting**: Redis を使用したレート制限
-- **データ暗号化**: 機密情報はデータベースで暗号化保存
-- **監査ログ**: すべての操作を記録
-
 ## 🛣️ ロードマップ
 
-- [x] 基本的な資産発見機能
+### 完了 ✅
+- [x] 基本的な資産発見
 - [x] Certificate Transparency統合
 - [x] Shodan API統合
 - [x] サブドメインスキャナー
-- [x] Docker環境構築
+- [x] **脅威インテリジェンスフィード統合**
+- [x] **MITRE ATT&CK フレームワーク統合**
+- [x] **IoC管理システム**
+- [x] **APTグループ追跡**
+- [x] **脅威スコアリング**
+
+### 開発中 🚧
 - [ ] Webダッシュボード（React）
-- [ ] ユーザー認証・認可
-- [ ] Censys API統合
-- [ ] VirusTotal統合
-- [ ] 証明書有効期限監視
-- [ ] 脆弱性データベースマッチング
+- [ ] ユーザー認証・認可（JWT）
+- [ ] API エンドポイント実装
+- [ ] Celeryタスク実装
 - [ ] Slack/Email通知
+
+### 今後の予定 📅
+- [ ] Censys API統合
+- [ ] 証明書有効期限監視
 - [ ] レポート生成（PDF/Excel）
 - [ ] AI/MLによる異常検知
-- [ ] MITRE ATT&CK マッピング
+- [ ] マルチテナント対応
+- [ ] STIX/TAXII サポート
 
 ## 🤝 コントリビューション
 
-プルリクエストを歓迎します！大きな変更の場合は、まずissueを開いて変更内容を議論してください。
+プルリクエストを歓迎します！
 
-1. このリポジトリをFork
-2. Feature ブランチを作成 (`git checkout -b feature/AmazingFeature`)
-3. 変更をCommit (`git commit -m 'Add some AmazingFeature'`)
-4. ブランチにPush (`git push origin feature/AmazingFeature`)
-5. Pull Requestを作成
+1. Fork
+2. Feature ブランチ作成 (`git checkout -b feature/ThreatIntel`)
+3. Commit (`git commit -m 'Add threat intelligence'`)
+4. Push (`git push origin feature/ThreatIntel`)
+5. Pull Request作成
 
 ## 📄 ライセンス
 
-MIT License - 詳細は [LICENSE](LICENSE) ファイルを参照してください。
+MIT License - [LICENSE](LICENSE)
 
 ## 🙏 謝辞
 
-このプロジェクトは以下のオープンソースプロジェクトを活用しています：
+### 脅威インテリジェンスソース
+- [AlienVault OTX](https://otx.alienvault.com/)
+- [Abuse.ch](https://abuse.ch/)
+- [MITRE ATT&CK](https://attack.mitre.org/)
+- [VirusTotal](https://www.virustotal.com/)
 
+### 技術スタック
 - [FastAPI](https://fastapi.tiangolo.com/)
 - [Celery](https://docs.celeryproject.org/)
-- [Shodan Python Library](https://shodan.readthedocs.io/)
-- [DNSPython](https://www.dnspython.org/)
+- [Shodan](https://shodan.readthedocs.io/)
 - [PostgreSQL](https://www.postgresql.org/)
 - [Redis](https://redis.io/)
 
 ## 📞 サポート
 
-- **Issue Tracker**: https://github.com/d01ki/osint-asset-monitor/issues
-- **Documentation**: https://github.com/d01ki/osint-asset-monitor/wiki
+- **Issues**: https://github.com/d01ki/osint-asset-monitor/issues
+- **Documentation**: [docs/THREAT_INTELLIGENCE.md](docs/THREAT_INTELLIGENCE.md)
 
 ---
 
-**⚠️ 免責事項**: このツールは自組織の資産監視を目的としています。許可なく他組織のネットワークをスキャンすることは違法です。適用される法律と規制を遵守してください。
+**⚠️ 免責事項**: このツールは自組織の資産監視と脅威分析を目的としています。許可なく他組織のネットワークをスキャンすることは違法です。
 
 ## 🎓 学習リソース
 
 - [OSINT Framework](https://osintframework.com/)
-- [Shodan Guides](https://help.shodan.io/)
-- [Certificate Transparency](https://certificate.transparency.dev/)
+- [MITRE ATT&CK Navigator](https://mitre-attack.github.io/attack-navigator/)
+- [Cyber Kill Chain](https://www.lockheedmartin.com/en-us/capabilities/cyber/cyber-kill-chain.html)
 - [OWASP Testing Guide](https://owasp.org/www-project-web-security-testing-guide/)
